@@ -15,8 +15,5 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          pip install -U "huggingface_hub[cli]"
-          # Create a temp directory to hold only the files we want to upload
-          mkdir deploy
-          cp app.py requirements.txt README.md deploy/
-          huggingface-cli upload hssling/derm-analyzer-api deploy . --repo-type=space --token=$HF_TOKEN
+          pip install -U huggingface-hub
+          python deploy.py
