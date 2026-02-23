@@ -8,7 +8,6 @@ if not token:
 
 repo_id = "hssling/derm-analyzer-api"
 
-# Use git directly - more reliable than huggingface_hub API for older versions
 import subprocess
 
 # Clone the existing HF Space
@@ -16,7 +15,16 @@ result = subprocess.run(
     ["git", "clone", f"https://hssling:{token}@huggingface.co/spaces/{repo_id}", "/tmp/hf_space"],
     capture_output=True, text=True
 )
-print(result.stdout, result.stderr)
+print("Clone stdout:", result.stdout)
+print("Clone stderr:", result.stderr)
+
+# Ensure we use a clean .gitattributes with NO .py LFS tracking 
+# (HF default tracks *.py as non-LFS text, our override was causing conflicts)
+with open("/tmp/hf_space/.gitattributes", "w") as f:
+    f.write("*.bin filter=lfs diff=lfs merge=lfs -text\n")
+    f.write("*.safetensors filter=lfs diff=lfs merge=lfs -text\n")
+    f.write("*.pt filter=lfs diff=lfs merge=lfs -text\n")
+    f.write("*.ckpt filter=lfs diff=lfs merge=lfs -text\n")
 
 # Copy only Space-needed files
 for fname in ["app.py", "requirements.txt", "README.md"]:
@@ -43,3 +51,4 @@ if result.returncode != 0:
     print(f"Push failed with exit code {result.returncode}")
     sys.exit(result.returncode)
 print(f"Successfully synced to https://huggingface.co/spaces/{repo_id}")
+
