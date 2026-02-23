@@ -17,16 +17,30 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Create a clean temporary directory with only Space-needed files
-          mkdir hf_space_tmp
-          cp app.py hf_space_tmp/
-          cp requirements.txt hf_space_tmp/
-          cp README.md hf_space_tmp/
+          pip install -q huggingface-hub
+          python - <<'EOF'
+          import os, shutil
+          from huggingface_hub import HfApi, upload_folder
+          from pathlib import Path
 
-          cd hf_space_tmp
-          git init
-          git config user.email "ci@github.com"
-          git config user.name "GitHub Actions"
-          git add .
-          git commit -m "Sync from GitHub: ${{ github.sha }}"
-          git push --force https://hssling:$HF_TOKEN@huggingface.co/spaces/hssling/derm-analyzer-api HEAD:main
+          token = os.environ["HF_TOKEN"]
+          repo_id = "hssling/derm-analyzer-api"
+
+          # Copy only Space-needed files into a temp folder
+          tmp = Path("/tmp/hf_space")
+          tmp.mkdir(exist_ok=True)
+          for fname in ["app.py", "requirements.txt", "README.md"]:
+              src = Path(fname)
+              if src.exists():
+                  shutil.copy(src, tmp / fname)
+
+          upload_folder(
+              repo_id=repo_id,
+              repo_type="space",
+              folder_path=str(tmp),
+              token=token,
+              commit_message=f"Sync from GitHub CI",
+              ignore_patterns=["*.pyc", "__pycache__"],
+          )
+          print(f"Successfully uploaded to {repo_id}")
+          EOF
