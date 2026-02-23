@@ -3,7 +3,6 @@ name: Sync to Hugging Face Hub
 on:
   push:
     branches: [main, master]
-
   workflow_dispatch:
 
 jobs:
@@ -20,4 +19,5 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add space https://hssling:$HF_TOKEN@huggingface.co/spaces/hssling/derm-analyzer-api
-          git push --force space master:main
+          # Only push the Space-relevant files (app.py, requirements.txt, README.md)
+          git push --force space HEAD:main
