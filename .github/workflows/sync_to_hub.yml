@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Push to Hugging Face Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          pip install -U huggingface-hub
-          python .github/workflows/upload_to_hf.py
+          pip install -U "huggingface_hub[cli]"
+          # Create a temp directory to hold only the files we want to upload
+          mkdir deploy
+          cp app.py requirements.txt README.md deploy/
+          huggingface-cli upload hssling/derm-analyzer-api deploy . --repo-type=space --token=$HF_TOKEN
