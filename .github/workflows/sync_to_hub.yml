@@ -17,4 +17,5 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          pip install -U huggingface-hub
           python .github/workflows/upload_to_hf.py
