@@ -12,12 +12,21 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          lfs: true
 
       - name: Push to Hugging Face Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git remote add space https://hssling:$HF_TOKEN@huggingface.co/spaces/hssling/derm-analyzer-api
-          # Only push the Space-relevant files (app.py, requirements.txt, README.md)
-          git push --force space HEAD:main
+          # Create a clean temporary directory with only Space-needed files
+          mkdir hf_space_tmp
+          cp app.py hf_space_tmp/
+          cp requirements.txt hf_space_tmp/
+          cp README.md hf_space_tmp/
+
+          cd hf_space_tmp
+          git init
+          git config user.email "ci@github.com"
+          git config user.name "GitHub Actions"
+          git add .
+          git commit -m "Sync from GitHub: ${{ github.sha }}"
+          git push --force https://hssling:$HF_TOKEN@huggingface.co/spaces/hssling/derm-analyzer-api HEAD:main
