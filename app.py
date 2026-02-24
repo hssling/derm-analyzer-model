@@ -4,27 +4,32 @@ from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 from PIL import Image
 import json
 
+import os
+
 MODEL_ID = "Qwen/Qwen2-VL-2B-Instruct"
 ADAPTER_ID = "hssling/derm-analyzer-adapter"
 
 print("Starting App Engine...")
 device = "cuda" if torch.cuda.is_available() else "cpu"
-processor = AutoProcessor.from_pretrained(MODEL_ID)
+token = os.environ.get("HF_TOKEN")
+
+processor = AutoProcessor.from_pretrained(MODEL_ID, token=token)
 model = Qwen2VLForConditionalGeneration.from_pretrained(
     MODEL_ID,
     torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-    device_map="auto"
+    device_map="auto",
+    token=token
 )
 
 if ADAPTER_ID:
     print(f"Loading custom fine-tuned LoRA weights: {ADAPTER_ID}")
     try:
-        model.load_adapter(ADAPTER_ID)
+        model.load_adapter(ADAPTER_ID, token=token)
         print("✅ Adapter loaded successfully over the base Qwen2-VL engine.")
     except Exception as e:
         print(f"Failed to load adapter. Using base model. Error: {e}")
 
-def diagnose_skin(image: Image.Image = None, clinical_notes: str = '', temp: float = 0.4, max_tokens: int = 2000):
+def diagnose_skin(image, clinical_notes, temp, max_tokens):
     try:
         if image is None:
             return json.dumps({"error": "No image provided."})
