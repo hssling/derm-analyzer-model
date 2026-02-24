@@ -20,6 +20,7 @@ if ADAPTER_ID:
     print(f"Loading custom fine-tuned LoRA weights: {ADAPTER_ID}")
     try:
         model.load_adapter(ADAPTER_ID)
+        print("✅ Adapter loaded successfully over the base Qwen2-VL engine.")
     except Exception as e:
         print(f"Failed to load adapter. Using base model. Error: {e}")
 
