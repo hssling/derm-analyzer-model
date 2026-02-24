@@ -60,7 +60,13 @@ gc.collect()
 torch.cuda.empty_cache()
 
 # ─── 2. CONFIGURATION ─────────────────────────────────────────────────────────
-HF_TOKEN       = os.environ.get("HF_TOKEN") or os.environ.get("KAGGLE_SECRET_HF_TOKEN")
+HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("KAGGLE_SECRET_HF_TOKEN")
+try:
+    from kaggle_secrets import UserSecretsClient
+    HF_TOKEN = HF_TOKEN or UserSecretsClient().get_secret("HF_TOKEN")
+except ImportError:
+    pass
+
 MODEL_ID       = "Qwen/Qwen2-VL-2B-Instruct"
 ADAPTER_REPO   = "hssling/derm-analyzer-adapter"
 MAX_SAMPLES    = 3000       # Reduce for faster runs; increase for better quality
