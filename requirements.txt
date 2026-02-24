@@ -7,3 +7,4 @@ datasets
 huggingface-hub<0.28.0
 gradio>=4.0.0
 Pillow
+pyaudioop
