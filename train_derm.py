@@ -40,6 +40,8 @@ install([
 
 # ─── 1. IMPORTS ───────────────────────────────────────────────────────────────
 import os, gc, json, random, warnings
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import torch
 from pathlib import Path
 from PIL import Image
@@ -70,9 +72,9 @@ except ImportError:
 MODEL_ID       = "Qwen/Qwen2-VL-2B-Instruct"
 ADAPTER_REPO   = "hssling/derm-analyzer-adapter"
 MAX_SAMPLES    = 3000       # Reduce for faster runs; increase for better quality
-MAX_SEQ_LEN    = 1024
-BATCH_SIZE     = 2
-GRAD_ACCUM     = 8
+MAX_SEQ_LEN    = 512        # Reduced to save VRAM
+BATCH_SIZE     = 1          # Reduced to save VRAM
+GRAD_ACCUM     = 16         # Increased to maintain effective batch size
 EPOCHS         = 2
 LR             = 2e-4
 OUTPUT_DIR     = "/kaggle/working/derm_adapter"
@@ -111,7 +113,6 @@ print("\n[1/5] Loading dermatology datasets...")
 
 datasets_to_try = [
     ("marmal88/skin_cancer", "train", "image", "dx"),     # HAM10000
-    ("pvlinhk/ISIC2019-full", "train", "image", "target"), # ISIC 2019
 ]
 
 loaded = []
@@ -217,6 +218,7 @@ lora_config = LoraConfig(
 )
 
 model = get_peft_model(model, lora_config)
+model.gradient_checkpointing_enable() # Enable gradient checkpointing to save VRAM
 model.print_trainable_parameters()
 
 # ─── 7. PRE-PROCESS DATASET ───────────────────────────────────────────────────
@@ -291,9 +293,8 @@ training_args = TrainingArguments(
     lr_scheduler_type="cosine",
 )
 
-# Simple manual training loop (more compatible with vision models)
 from torch.utils.data import DataLoader
-from torch.optim import AdamW
+import bitsandbytes as bnb
 from transformers import get_cosine_schedule_with_warmup
 
 device = next(model.parameters()).device
@@ -305,7 +306,7 @@ train_loader = DataLoader(
     collate_fn=lambda b: {k: torch.stack([d[k] for d in b if d.get(k) is not None]) for k in b[0] if b[0].get(k) is not None}
 )
 
-optimizer = AdamW(model.parameters(), lr=LR, weight_decay=0.01)
+optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=LR, weight_decay=0.01)
 total_steps = len(train_loader) * EPOCHS
 scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=int(0.05 * total_steps), num_training_steps=total_steps)
 
