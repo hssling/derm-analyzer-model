@@ -1,5 +1,6 @@
 torch>=2.0
-transformers>=4.40.0
+transformers==4.47.1
+qwen-vl-utils
 accelerate
 peft
 bitsandbytes
