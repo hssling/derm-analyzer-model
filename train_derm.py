@@ -53,7 +53,7 @@ from transformers import (
     TrainingArguments,
     BitsAndBytesConfig,
 )
-from peft import LoraConfig, get_peft_model, TaskType
+from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training
 from trl import SFTTrainer
 from huggingface_hub import HfApi
 
@@ -208,6 +208,10 @@ print("  Model loaded successfully.")
 # ─── 6. LORA SETUP ────────────────────────────────────────────────────────────
 print("\n[3/5] Applying LoRA configuration...")
 
+# Prepare model for 4-bit training (handles gradient checkpointing and requires_grad)
+model.gradient_checkpointing_enable()
+model = prepare_model_for_kbit_training(model)
+
 lora_config = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
     r=16,
@@ -218,7 +222,6 @@ lora_config = LoraConfig(
 )
 
 model = get_peft_model(model, lora_config)
-model.gradient_checkpointing_enable() # Enable gradient checkpointing to save VRAM
 model.print_trainable_parameters()
 
 # ─── 7. PRE-PROCESS DATASET ───────────────────────────────────────────────────
