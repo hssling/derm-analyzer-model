@@ -2,7 +2,7 @@
 title: DermaAI API
 emoji: 🧫
 colorFrom: yellow
-colorTo: orange
+colorTo: red
 sdk: gradio
 sdk_version: 5.4.1
 app_file: app.py
